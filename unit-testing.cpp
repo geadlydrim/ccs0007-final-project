@@ -37,4 +37,26 @@
         }
     } while(true);
 
+    vector<StudentInformation*> searchByStudentId(int id){
+        vector<StudentInformation*> matchArray;
+        if (head == NULL) {
+            cout << "Database is empty.\n";
+            return matchArray;
+        }
+
+        StudentInformation* temp = head;
+        while(temp != NULL){
+            if(temp->studentId == id){
+                matchArray.push_back(temp);
+            }
+            temp = temp->next;
+        }
+
+        if(matchArray.empty()){
+            std::cout << "No match found.\n";
+        }
+
+        return matchArray;
+    }
+    
 */
