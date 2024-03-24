@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <vector>
 #include <limits>
-#include <type_traits>
+#include <type_traits> // testing
 #include <sstream>
 
 using namespace std;
@@ -12,7 +12,7 @@ using namespace std;
 #define SETW_LEFT(width) setw(width) << left
 
 struct StudentInformation{
-    int nodeId;
+    int nodeId; 
     int studentId, yearLevel;
     string fullName, birthday, address, gender, program;
     static int counter;
