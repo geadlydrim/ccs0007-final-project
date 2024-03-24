@@ -2,8 +2,10 @@
 #include <fstream>
 #include <string>
 #include <iomanip>
-#include <fstream>
 #include <vector>
+#include <limits>
+#include <type_traits>
+#include <sstream>
 
 using namespace std;
 
@@ -51,6 +53,20 @@ class StudentDataBase{
             }
             temp->next = newStudent;
         }
+    }
+
+    bool idExisting(int id){
+        if(head == NULL){
+            return false;
+        }
+        StudentInformation* temp = head;
+        while(temp != NULL){
+            if(temp->studentId == id){
+                return true;
+            }
+            temp = temp->next;
+        }
+        return false;
     }
 
     void readDatabase(fstream& DatabaseFile){
@@ -287,6 +303,7 @@ class StudentDataBase{
 };
 
 void pressContinue();
+int getOption();
 void addRecord(StudentDataBase& studentDataBase);
 void deleteRecord(StudentDataBase& studentDataBase);
 void searchRecord(StudentDataBase& studentDataBase);
@@ -315,8 +332,7 @@ int main(){
              << "[5] - Save Changes\n"
              << "[6] - Exit\n"
              << "Enter option: ";
-        cin >> option;
-        cin.ignore();
+        option = getOption();
 
         switch(option){
             case 1:
@@ -353,7 +369,15 @@ int main(){
                     switch(confirm){
                         case 'Y':
                         case 'y':
-                            cout << "Program exiting.\n";
+                            system("cls");
+                            cout << "Program exiting...\n\n";
+                            cout << "GROUP A\n"
+                                 << "Agustin, Keanu\n"
+                                 << "Imperial, Jacqueline\n"
+                                 << "Joaquin, Arkinne Yuel\n"
+                                 << "Llarvers, John Kaiser\n"
+                                 << "Saavedra, Clarence Vance\n"
+                                 << "Santos, Jericho\n";
                             return 0;
                             break;
                         case 'N':
@@ -367,12 +391,21 @@ int main(){
                     }
                 }
                 else{
+                    system("cls");
+                    cout << "Program exiting...\n\n";
+                    cout << "GROUP A\n"
+                         << "Agustin, Keanu\n"
+                         << "Imperial, Jacqueline\n"
+                         << "Joaquin, Arkinne Yuel\n"
+                         << "Llarvers, John Kaiser\n"
+                         << "Saavedra, Clarence Vance\n"
+                         << "Santos, Jericho\n";
                     return 0;
                 }
             default:
                 system("cls");
                 cin.clear();
-                cin.ignore(100, '\n');
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 cout << "Invalid input\n";
                 pressContinue();
         }
@@ -387,13 +420,54 @@ void pressContinue(){
 	system("cls");
 }
 
+int getOption(){
+	std::string inputOption;
+	int option;
+	do{
+		std::getline(std::cin, inputOption);
+
+		std::stringstream ss(inputOption);
+		if (ss >> option) {
+			char remaining;
+			if (ss >> remaining) {
+				std::cout << "\x1b[1A";
+    			std::cout << "\x1b[2K";
+				std::cerr << "Invalid input. Please enter only an integer.\n"
+						  << "Enter again: ";
+			} 
+			else {
+				if(option < 1){
+					std::cerr << "Invalid input. Please enter only a positive integer.\n"
+						  	  << "Enter again: ";
+				}
+				else{
+					return option;
+				}
+			}
+		} 
+		else { // Conversion failed
+			std::cout << "\x1b[1A";
+    		std::cout << "\x1b[2K";
+			std::cerr << "Invalid input. Please enter only an integer.\n"
+					  << "Enter again: ";
+		}
+	}while(true);
+}
+
 void addRecord(StudentDataBase& studentDataBase){
     StudentInformation* newStudent = new StudentInformation;
 
     cout << "Enter the following information\n";
-    cout << "Student ID Number: ";
-    cin >> newStudent->studentId;
-    cin.ignore();
+    do{
+        cout << "Student ID Number: ";
+        newStudent->studentId = getOption();
+        if(studentDataBase.idExisting(newStudent->studentId)){
+            cout << "Student ID already exists. Please check and try again.\n";
+        }
+        else{
+            break;
+        }
+    } while(true);
     cout << "Full Name: ";
     getline(cin, newStudent->fullName);
     cout << "Birthday (mm/dd/yyyy): ";
@@ -443,8 +517,7 @@ void searchRecord(StudentDataBase& studentDataBase){
                   << "[4] - By Degree Program\n"
                   << "[5] - By Year Level\n"
                   << "[6] - Exit\n";
-        cin >> option;
-        cin.ignore();
+        option = getOption();
 
         switch (option){
             case 1:
@@ -480,6 +553,10 @@ void searchRecord(StudentDataBase& studentDataBase){
                 system("cls");
                 return;
             default:
+                system("cls");
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "Invalid input.\n";
                 break;
         }
         studentDataBase.searchDatabase(data, option);

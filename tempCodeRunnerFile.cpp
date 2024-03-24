@@ -1,4 +1,1 @@
-
-        else{
-            StudentInformation::counter = 0;
-        }
+GROUP A
