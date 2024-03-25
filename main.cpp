@@ -6,6 +6,8 @@
 #include <limits>
 #include <type_traits> // testing
 #include <sstream>
+#include <string.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -14,26 +16,47 @@ using namespace std;
 struct StudentInformation{
     int nodeId; 
     int studentId, yearLevel;
-    string fullName, birthday, address, gender, program;
+    string firstName, lastName, fullName, birthday, address, gender, program;
     static int counter;
 
-    StudentInformation* prev = NULL;
     StudentInformation* next = NULL;
 
     StudentInformation(){
         counter++;
+        cout << "new student created. counter: " << counter << '\n';
         nodeId = counter;
     }
 
+    void setFullName(){
+        fullName = firstName + ' ' + lastName;
+    }
+
     void displayInfo(){
-        
         cout << setw(12) << nodeId << "| " << SETW_LEFT(11) << studentId << "| " << SETW_LEFT(43) << fullName
-                  << "| " << SETW_LEFT(11) << birthday << "| " << SETW_LEFT(8) << gender
-                << "| " << SETW_LEFT(15) << program << "| " << SETW_LEFT(11) << yearLevel << "| " << SETW_LEFT(13) << address << '\n';
+            << "| " << SETW_LEFT(11) << birthday << "| " << SETW_LEFT(8) << gender
+            << "| " << SETW_LEFT(15) << program << "| " << SETW_LEFT(11) << yearLevel << "| " << SETW_LEFT(13) << address << '\n';
+    }
+
+    void displayInfoLastNameFirst(){
+        cout << setw(12) << nodeId << "| " << SETW_LEFT(11) << studentId << "| "
+            << left << lastName << ' ' << SETW_LEFT(43 - lastName.length() - 1) << firstName
+            << "| " << SETW_LEFT(11) << birthday << "| " << SETW_LEFT(8) << gender
+            << "| " << SETW_LEFT(15) << program << "| " << SETW_LEFT(11) << yearLevel << "| " << SETW_LEFT(13) << address << '\n';
     }
 };
 
 int StudentInformation::counter = 0;
+
+bool compareByLastName(const StudentInformation* a, const StudentInformation* b) {
+    string tempA = a->lastName, tempB = b->lastName;
+    for(char& c: tempA){
+        c = tolower(c);
+    }
+    for(char& c: tempB){
+        c = tolower(c);
+    }
+    return tempA < tempB;
+}
 
 class StudentDataBase{
     public:
@@ -43,6 +66,7 @@ class StudentDataBase{
 
     void addStudent(StudentInformation* studentInfo){
         StudentInformation* newStudent = studentInfo;
+        newStudent->setFullName();
         if(head == NULL){
             head = newStudent;
         }
@@ -73,14 +97,6 @@ class StudentDataBase{
         DatabaseFile.open("studentdatabase.txt", ios::in);
         string line;
         
-        getline(DatabaseFile, line);
-        if(line.find("::") != string::npos){
-            StudentInformation::counter = stoi(line.substr(line.find("::") + 2));
-        }
-        else{
-            StudentInformation::counter = 0;
-        }
-
         while(getline(DatabaseFile, line)){
             if(line.find('#') != string::npos){
                 StudentInformation* newStudent = new StudentInformation;
@@ -89,7 +105,9 @@ class StudentDataBase{
                 getline(DatabaseFile, line);
                 newStudent->studentId = stoi(line);
                 getline(DatabaseFile, line);
-                newStudent->fullName = line;
+                newStudent->firstName = line;
+                getline(DatabaseFile, line);
+                newStudent->lastName = line;
                 getline(DatabaseFile, line);
                 newStudent->birthday = line;
                 getline(DatabaseFile, line);
@@ -105,6 +123,17 @@ class StudentDataBase{
             }
         }
 
+        DatabaseFile.clear();
+        DatabaseFile.seekg(0, ios::beg);
+
+        getline(DatabaseFile, line);
+        if(line.find("::") != string::npos){
+            StudentInformation::counter = stoi(line.substr(line.find("::") + 2));
+        }
+        else{
+            StudentInformation::counter = 0;
+        }
+
         DatabaseFile.close();
     }
 
@@ -117,15 +146,33 @@ class StudentDataBase{
 
     void viewRecords(){
         StudentInformation* temp = head;
-        if(temp != NULL){
+        if(temp == NULL){
+            cout << "Database is empty.\n";
+            return;
+        }
+
+        string yes;
+        cout << "Enter (y) if you want to display alphabetically. Enter any for default\n";
+        getline(cin, yes);
+
+        if(yes == "Y" || yes == "y"){
+            vector<StudentInformation*> sortingArray;
+            while(temp != NULL){
+                sortingArray.push_back(temp);
+                temp = temp->next;
+            }
+            sort(sortingArray.begin(), sortingArray.end(), compareByLastName);
+            displayHeader();
+            for(StudentInformation* student: sortingArray){
+                student->displayInfoLastNameFirst();
+            }
+        }
+        else{
             displayHeader();
             while(temp != NULL){
                 temp->displayInfo();
                 temp = temp->next;
             }
-        }
-        else{
-            cout << "Database is empty.\n";
         }
     }
 
@@ -145,6 +192,8 @@ class StudentDataBase{
         }
 
         switch(option){
+            case 0:
+                return;
             case 1:
                 intData = stoi(data);
                 while(temp != NULL){
@@ -202,6 +251,32 @@ class StudentDataBase{
                     temp = temp->next;
                 }
                 break;
+            case 6:
+                while(temp != NULL){
+                    holder = temp->firstName;
+                    for(char& c: holder){
+                        c = tolower(c);
+                    }
+
+                    if(holder == data){
+                        matchArray.push_back(temp);
+                    }
+                    temp = temp->next;
+                }
+                break;
+            case 7:
+                while(temp != NULL){
+                    holder = temp->lastName;
+                    for(char& c: holder){
+                        c = tolower(c);
+                    }
+
+                    if(holder == data){
+                        matchArray.push_back(temp);
+                    }
+                    temp = temp->next;
+                }
+                break;
         }
 
         if(matchArray.empty()){
@@ -215,32 +290,6 @@ class StudentDataBase{
         }
 
         return;
-    }
-
-    StudentInformation* searchByStudentId(int id){
-        if (head == nullptr) {
-            cout << "List is empty.\n";
-            return NULL;
-        }
-
-        StudentInformation* temp = head;
-        if(head->studentId == id){
-            return head;
-        }
-
-        while(temp != NULL && temp->studentId != id){
-            temp = temp->next;
-        }
-
-        if(temp == NULL){
-            cout << "No match found.\n";
-            return NULL;
-        }
-        else if(temp->studentId == id){
-            return temp;
-        }
-
-        return NULL;
     }
 
     void deleteRecord(int nodeId){
@@ -283,7 +332,8 @@ class StudentDataBase{
             while (temp != NULL) {
                 DatabaseFile << '#' << temp->nodeId << '\n';
                 DatabaseFile << temp->studentId << '\n';
-                DatabaseFile << temp->fullName << '\n';
+                DatabaseFile << temp->firstName << '\n';
+                DatabaseFile << temp->lastName << '\n';
                 DatabaseFile << temp->birthday << '\n';
                 DatabaseFile << temp->address << '\n';
                 DatabaseFile << temp->gender << '\n';
@@ -430,8 +480,6 @@ int getOption(){
 		if (ss >> option) {
 			char remaining;
 			if (ss >> remaining) {
-				std::cout << "\x1b[1A";
-    			std::cout << "\x1b[2K";
 				std::cerr << "Invalid input. Please enter only an integer.\n"
 						  << "Enter again: ";
 			} 
@@ -445,9 +493,7 @@ int getOption(){
 				}
 			}
 		} 
-		else { // Conversion failed
-			std::cout << "\x1b[1A";
-    		std::cout << "\x1b[2K";
+		else {
 			std::cerr << "Invalid input. Please enter only an integer.\n"
 					  << "Enter again: ";
 		}
@@ -468,8 +514,10 @@ void addRecord(StudentDataBase& studentDataBase){
             break;
         }
     } while(true);
-    cout << "Full Name: ";
-    getline(cin, newStudent->fullName);
+    cout << "First Name: ";
+    getline(cin, newStudent->firstName);
+    cout << "Last Name: ";
+    getline(cin, newStudent->lastName);
     cout << "Birthday (mm/dd/yyyy): ";
     getline(cin, newStudent->birthday);
     cout << "Address: ";
@@ -505,7 +553,7 @@ void deleteRecord(StudentDataBase& studentDataBase){
 }
 
 void searchRecord(StudentDataBase& studentDataBase){
-    int option;
+    int option, option2;
     string data;
     int intData;
 
@@ -516,7 +564,8 @@ void searchRecord(StudentDataBase& studentDataBase){
                   << "[3] - By Gender\n"
                   << "[4] - By Degree Program\n"
                   << "[5] - By Year Level\n"
-                  << "[6] - Exit\n";
+                  << "[6] - Back\n"
+                  << "Option: ";
         option = getOption();
 
         switch (option){
@@ -529,8 +578,35 @@ void searchRecord(StudentDataBase& studentDataBase){
                 break;
             case 2:
                 system("cls");
-                cout << "Enter full name: ";
-                getline(cin, data);
+                cout << "[1] - By First Name\n"
+                     << "[2] - By Last Name\n"
+                     << "[3] - By Full Name\n"
+                     << "[4] - Back\n"
+                     << "Option: ";
+                option2 = getOption();
+                system("cls");
+                switch(option2){
+                    case 1:
+                        cout << "Enter first name: ";
+                        getline(cin, data);
+                        option = 6;
+                        break;
+                    case 2: 
+                        cout << "Enter last name: ";
+                        getline(cin, data);
+                        option = 7;
+                        break;
+                    case 3:
+                        cout << "Enter full name: ";
+                        getline(cin, data);
+                        break;
+                    case 4:
+                        option = 0;
+                        break;
+                    default:
+                        option = 0;
+                        cout << "Invalid input.\n";
+                }
                 break;
             case 3:
                 system("cls");
@@ -560,7 +636,9 @@ void searchRecord(StudentDataBase& studentDataBase){
                 break;
         }
         studentDataBase.searchDatabase(data, option);
-        pressContinue();
+        if(option == 0){
+            continue;
+        } else{ pressContinue(); }
     } while(true);
 }
 
