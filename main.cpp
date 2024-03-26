@@ -1,29 +1,29 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-#include <vector>
-#include <type_traits> // testing
-#include <sstream>
+#include <iostream> // input/output
+#include <fstream> // file handling
+#include <string>// string functions
 #include <string.h>
-#include <algorithm>
+#include <iomanip> // text formatting
+#include <type_traits> 
+#include <sstream> // input type checking
+#include <algorithm> // sorting
+#include <vector> // match array
 
 using namespace std;
-#define SETW_LEFT(width) setw(width) << left
+#define SETW_LEFT(width) setw(width) << left // formatting macro, shorten repetitive syntax
 
-void pressContinue(){
+void pressContinue(){   // freeze interface, improves UI/UX
 	cout << "Press any key to continue...\n";
     cin.get();
 	system("cls");
 }
 
-int getOption(){
-	std::string inputOption;
+int getOption(){    // ensure valid input for int types, error handling
+	string inputOption;
 	int option;
 	do{
-		std::getline(std::cin, inputOption);
+		getline(cin, inputOption);
+		stringstream ss(inputOption);
 
-		std::stringstream ss(inputOption);
 		if (ss >> option) {
 			char remaining;
 			if (ss >> remaining) {
@@ -47,7 +47,7 @@ int getOption(){
 	}while(true);
 }
 
-struct StudentInformation{
+struct StudentInformation{  // node structure for student records
     int nodeId; 
     int studentId, yearLevel;
     string firstName, lastName, fullName, birthday, address, gender, program;
@@ -55,7 +55,7 @@ struct StudentInformation{
 
     StudentInformation* next = NULL;
 
-    StudentInformation(){
+    StudentInformation(){   // increment counter to ensure unique node id
         counter++;
         nodeId = counter;
     }
@@ -64,23 +64,57 @@ struct StudentInformation{
         fullName = firstName + ' ' + lastName;
     }
 
-    void displayInfo(){
-        cout << setw(12) << nodeId << "| " << SETW_LEFT(11) << studentId << "| " << SETW_LEFT(43) << fullName
-            << "| " << SETW_LEFT(11) << birthday << "| " << SETW_LEFT(8) << gender
-            << "| " << SETW_LEFT(15) << program << "| " << SETW_LEFT(11) << yearLevel << "| " << SETW_LEFT(13) << address << '\n';
+    string printToUpper(string data){   // print to uppercase for uniformity
+        string temp = data;
+        for(char& c: temp){
+            c = toupper(c);
+        }
+        return temp;
+    }
+
+    string shorten(string data, int index){     // handle event for text overflow, ensure display format is not destroyed
+        string temp;
+        if(data.length() > index){
+            temp = data.substr(0, index - 4) + "...";
+        }
+        else{
+            temp = data.substr(0, index);
+        }
+        return temp;
+    }
+
+    string shorten(int data, int index){
+        string temp = to_string(data);
+        if(temp.length() > index){
+            temp = temp.substr(0, index - 4) + "...";
+        }
+        else{
+            temp = temp.substr(0, index);
+        }
+        return temp;
+    }
+
+    void displayInfo(){     // print formatting
+        cout << setw(12) << nodeId << "| " << SETW_LEFT(11) << shorten(studentId, 11) 
+            << "| " << SETW_LEFT(43) << shorten(printToUpper(fullName), 43)
+            << "| " << SETW_LEFT(11) << birthday.substr(0, 10) << "| " << SETW_LEFT(8) << printToUpper(gender.substr(0,1))
+            << "| " << SETW_LEFT(15) << shorten(printToUpper(program), 15) << "| " << SETW_LEFT(11) << shorten(yearLevel, 1)
+            << "| " << SETW_LEFT(43) << shorten(printToUpper(address), 43) << '\n';
     }
 
     void displayInfoLastNameFirst(){
-        cout << setw(12) << nodeId << "| " << SETW_LEFT(11) << studentId << "| "
-            << left << lastName << ' ' << SETW_LEFT(43 - lastName.length() - 1) << firstName
-            << "| " << SETW_LEFT(11) << birthday << "| " << SETW_LEFT(8) << gender
-            << "| " << SETW_LEFT(15) << program << "| " << SETW_LEFT(11) << yearLevel << "| " << SETW_LEFT(13) << address << '\n';
+        string temp = lastName + ' ' + firstName;
+        cout << setw(12) << nodeId << "| " << SETW_LEFT(11) << studentId 
+            << "| " << SETW_LEFT(43) << shorten(printToUpper(temp), 43)
+            << "| " << SETW_LEFT(11) << birthday.substr(0, 10) << "| " << SETW_LEFT(8) << printToUpper(gender.substr(0,1))
+            << "| " << SETW_LEFT(15) << shorten(printToUpper(program), 15) << "| " << SETW_LEFT(11) << shorten(yearLevel, 1)
+            << "| " << SETW_LEFT(43) << shorten(printToUpper(address), 43) << '\n';
     }
 };
 
 int StudentInformation::counter = 0;
 
-bool compareByLastName(const StudentInformation* a, const StudentInformation* b) {
+bool compareByLastName(const StudentInformation* a, const StudentInformation* b) {  // function for alphabetical sorting
     string tempA = a->lastName, tempB = b->lastName;
     for(char& c: tempA){
         c = tolower(c);
@@ -91,13 +125,13 @@ bool compareByLastName(const StudentInformation* a, const StudentInformation* b)
     return tempA < tempB;
 }
 
-class StudentDataBase{
+class StudentDataBase{  // database class that will contain the nodes
     public:
     bool isModified = false;
     bool unsavedChanges = false;
     StudentInformation* head = NULL;
 
-    void addStudent(StudentInformation* studentInfo){
+    void addStudent(StudentInformation* studentInfo){   // adding new nodes
         StudentInformation* newStudent = studentInfo;
         newStudent->setFullName();
         if(head == NULL){
@@ -112,7 +146,7 @@ class StudentDataBase{
         }
     }
 
-    bool idExisting(int id){
+    bool idExisting(int id){    // duplicate student id not allowed
         if(head == NULL){
             return false;
         }
@@ -126,11 +160,11 @@ class StudentDataBase{
         return false;
     }
 
-    void readDatabase(fstream& DatabaseFile){
+    void readDatabase(fstream& DatabaseFile){   // read data from text file database
         DatabaseFile.open("studentdatabase.txt", ios::in);
         string line;
         
-        while(getline(DatabaseFile, line)){
+        while(getline(DatabaseFile, line)){     // create new node and fill with data from text file
             if(line.find('#') != string::npos){
                 StudentInformation* newStudent = new StudentInformation;
                 newStudent->nodeId = stoi(line.substr(line.find('#') + 1));
@@ -171,10 +205,12 @@ class StudentDataBase{
     }
 
     void displayHeader(){
+        system("cls");
+        cout << "Maximize window/Fullscreen for better experience.\n\n";
         cout << SETW_LEFT(12) << "Database ID" << SETW_LEFT(13) << "| Student ID" << SETW_LEFT(45) << "| Full Name" 
              << SETW_LEFT(13) << "| Birthday" << SETW_LEFT(10) << "| Gender" 
              << SETW_LEFT(17) << "| Degree Program" << SETW_LEFT(13) << "| Year Level" << SETW_LEFT(15) << "| Address" << '\n';
-        cout << setfill('=') << setw(140) << "=" << setfill(' ') << '\n';
+        cout << setfill('=') << setw(160) << "=" << setfill(' ') << '\n';
     }
 
     void viewRecords(){
@@ -209,7 +245,7 @@ class StudentDataBase{
         }
     }
 
-    void searchDatabase(string data, int option){
+    void searchDatabase(string data, int option){   // search database depending on option provided by user
         vector<StudentInformation*> matchArray;
 
         if (head == nullptr) {
@@ -354,7 +390,7 @@ class StudentDataBase{
         }
     }
 
-     void deleteRecordStudentId(int studentId){
+    void deleteRecordStudentId(int studentId){
         int deleteId = studentId;
 
         if(head->studentId == deleteId) {
@@ -383,7 +419,7 @@ class StudentDataBase{
         }
     }
 
-    void rewriteDatabase(fstream& DatabaseFile){
+    void rewriteDatabase(fstream& DatabaseFile){    // rewrites database text file with local program database
         if(isModified == true){
             DatabaseFile.open("studentdatabase.txt", ios::out);
 
@@ -479,7 +515,7 @@ int main(){
 }
 
 
-void addRecord(StudentDataBase& studentDataBase){
+void addRecord(StudentDataBase& studentDataBase){   // interface for adding
     StudentInformation* newStudent = new StudentInformation;
 
     cout << "Enter the following information\n";
@@ -513,7 +549,7 @@ void addRecord(StudentDataBase& studentDataBase){
     studentDataBase.unsavedChanges = true;
 }
 
-void deleteRecord(StudentDataBase& studentDataBase){
+void deleteRecord(StudentDataBase& studentDataBase){    // interface for deleting
     int id, option;
 
     if(studentDataBase.head == NULL){
@@ -554,7 +590,7 @@ void deleteRecord(StudentDataBase& studentDataBase){
     } while(true);
 }
 
-void searchRecord(StudentDataBase& studentDataBase){
+void searchRecord(StudentDataBase& studentDataBase){    // interface for search options
     int option, option2;
     string data;
     int intData;
@@ -646,7 +682,7 @@ void searchRecord(StudentDataBase& studentDataBase){
     } while(true);
 }
 
-void saveChanges(StudentDataBase& studentDataBase, fstream& DatabaseFile){
+void saveChanges(StudentDataBase& studentDataBase, fstream& DatabaseFile){  // confirmation for saving changes
     string choice;
     cout << "Saving changes will finalize the changes made in this program, rewriting the database file.\n";
     cout << "Proceed? (Y/n): ";
@@ -669,7 +705,7 @@ void saveChanges(StudentDataBase& studentDataBase, fstream& DatabaseFile){
     } while(true);
 }
 
-bool confirmExit(StudentDataBase studentDataBase){
+bool confirmExit(StudentDataBase studentDataBase){  // confirmation for exiting program
     if(studentDataBase.unsavedChanges){
         char confirm;
         cout << "You have unsaved changes. Closing the program will lose these changes.\n";
