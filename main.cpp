@@ -3,15 +3,49 @@
 #include <string>
 #include <iomanip>
 #include <vector>
-#include <limits>
 #include <type_traits> // testing
 #include <sstream>
 #include <string.h>
 #include <algorithm>
 
 using namespace std;
-
 #define SETW_LEFT(width) setw(width) << left
+
+void pressContinue(){
+	cout << "Press any key to continue...\n";
+    cin.get();
+	system("cls");
+}
+
+int getOption(){
+	std::string inputOption;
+	int option;
+	do{
+		std::getline(std::cin, inputOption);
+
+		std::stringstream ss(inputOption);
+		if (ss >> option) {
+			char remaining;
+			if (ss >> remaining) {
+				std::cerr << "Invalid input. Please enter only an integer.\n"
+						  << "Enter again: ";
+			} 
+			else {
+				if(option < 1){
+					std::cerr << "Invalid input. Please enter only a positive integer.\n"
+						  	  << "Enter again: ";
+				}
+				else{
+					return option;
+				}
+			}
+		} 
+		else {
+			std::cerr << "Invalid input. Please enter only an integer.\n"
+					  << "Enter again: ";
+		}
+	}while(true);
+}
 
 struct StudentInformation{
     int nodeId; 
@@ -23,7 +57,6 @@ struct StudentInformation{
 
     StudentInformation(){
         counter++;
-        cout << "new student created. counter: " << counter << '\n';
         nodeId = counter;
     }
 
@@ -192,8 +225,6 @@ class StudentDataBase{
         }
 
         switch(option){
-            case 0:
-                return;
             case 1:
                 intData = stoi(data);
                 while(temp != NULL){
@@ -277,6 +308,8 @@ class StudentDataBase{
                     temp = temp->next;
                 }
                 break;
+            default:
+                return;
         }
 
         if(matchArray.empty()){
@@ -292,7 +325,7 @@ class StudentDataBase{
         return;
     }
 
-    void deleteRecord(int nodeId){
+    void deleteRecordDatabaseId(int nodeId){
         int deleteId = nodeId;
 
         if(head->nodeId == deleteId) {
@@ -306,7 +339,35 @@ class StudentDataBase{
 		    StudentInformation* temp = head;
 
             while (temp->next != nullptr && temp->next->nodeId != deleteId) {
-                cout << "test\n";
+                temp = temp->next;
+            }
+
+            if (temp->next == nullptr) {
+                cout << "No record exists.\n";
+                return;
+            }
+            
+            StudentInformation* deleteMatch = temp->next;
+            temp->next = temp->next->next;
+            delete deleteMatch;
+            cout << "Record deleted successfully.\n";
+        }
+    }
+
+     void deleteRecordStudentId(int studentId){
+        int deleteId = studentId;
+
+        if(head->studentId == deleteId) {
+			StudentInformation* temp = head;
+			head = head->next;
+			delete temp;
+			
+			cout << "Record deleted successfully.\n";
+		}
+        else{
+		    StudentInformation* temp = head;
+
+            while (temp->next != nullptr && temp->next->studentId != deleteId) {
                 temp = temp->next;
             }
 
@@ -352,15 +413,13 @@ class StudentDataBase{
     }
 };
 
-void pressContinue();
-int getOption();
 void addRecord(StudentDataBase& studentDataBase);
 void deleteRecord(StudentDataBase& studentDataBase);
 void searchRecord(StudentDataBase& studentDataBase);
 void saveChanges(StudentDataBase& studentDataBase, fstream& DatabaseFile);
+bool confirmExit(StudentDataBase studentDataBase);
 
 int main(){
-
     fstream DatabaseFile("studentdatabase.txt", ios::in);
     if(!DatabaseFile.is_open()){
         DatabaseFile.open("studentdatabase.txt", ios::out);
@@ -371,10 +430,10 @@ int main(){
 
     StudentDataBase studentDataBase;
     studentDataBase.readDatabase(DatabaseFile);
-
     int option;
     
     do{
+        system("cls");
         cout << "[1] - Add New Record\n"
              << "[2] - Search Record\n"
              << "[3] - Display All Records\n"
@@ -383,79 +442,34 @@ int main(){
              << "[6] - Exit\n"
              << "Enter option: ";
         option = getOption();
-
+        
+        system("cls");
         switch(option){
             case 1:
-                system("cls");
                 addRecord(studentDataBase);
                 pressContinue();
                 break;
             case 2:
-                system("cls");
                 searchRecord(studentDataBase);
                 break;
             case 3:
-                system("cls");
                 studentDataBase.viewRecords();
                 pressContinue();
                 break;
             case 4:
-                system("cls");
                 deleteRecord(studentDataBase);
-                pressContinue();
                 break;
             case 5:
-                system("cls");
                 saveChanges(studentDataBase, DatabaseFile);
                 pressContinue();
                 break;
             case 6:
-                if(studentDataBase.unsavedChanges){
-                    char confirm;
-                    cout << "You have unsaved changes. Closing the program will lose these changes.\n";
-                    cout << "Proceed to exit?(Y/n): ";
-                    cin >> confirm;
-                    cin.ignore();
-                    switch(confirm){
-                        case 'Y':
-                        case 'y':
-                            system("cls");
-                            cout << "Program exiting...\n\n";
-                            cout << "GROUP A\n"
-                                 << "Agustin, Keanu\n"
-                                 << "Imperial, Jacqueline\n"
-                                 << "Joaquin, Arkinne Yuel\n"
-                                 << "Llarvers, John Kaiser\n"
-                                 << "Saavedra, Clarence Vance\n"
-                                 << "Santos, Jericho\n";
-                            return 0;
-                            break;
-                        case 'N':
-                        case 'n':
-                            system("cls");
-                            continue;
-                        default:
-                            system("cls");
-                            cout << "Invalid option.\n";
-                            continue;
-                    }
-                }
-                else{
-                    system("cls");
-                    cout << "Program exiting...\n\n";
-                    cout << "GROUP A\n"
-                         << "Agustin, Keanu\n"
-                         << "Imperial, Jacqueline\n"
-                         << "Joaquin, Arkinne Yuel\n"
-                         << "Llarvers, John Kaiser\n"
-                         << "Saavedra, Clarence Vance\n"
-                         << "Santos, Jericho\n";
+                if(confirmExit(studentDataBase)){
                     return 0;
                 }
+                break;
             default:
                 system("cls");
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 cout << "Invalid input\n";
                 pressContinue();
         }
@@ -464,41 +478,6 @@ int main(){
     return 0;
 }
 
-void pressContinue(){
-	cout << "Press any key to continue...\n";
-    cin.get();
-	system("cls");
-}
-
-int getOption(){
-	std::string inputOption;
-	int option;
-	do{
-		std::getline(std::cin, inputOption);
-
-		std::stringstream ss(inputOption);
-		if (ss >> option) {
-			char remaining;
-			if (ss >> remaining) {
-				std::cerr << "Invalid input. Please enter only an integer.\n"
-						  << "Enter again: ";
-			} 
-			else {
-				if(option < 1){
-					std::cerr << "Invalid input. Please enter only a positive integer.\n"
-						  	  << "Enter again: ";
-				}
-				else{
-					return option;
-				}
-			}
-		} 
-		else {
-			std::cerr << "Invalid input. Please enter only an integer.\n"
-					  << "Enter again: ";
-		}
-	}while(true);
-}
 
 void addRecord(StudentDataBase& studentDataBase){
     StudentInformation* newStudent = new StudentInformation;
@@ -527,8 +506,7 @@ void addRecord(StudentDataBase& studentDataBase){
     cout << "Degree Program: ";
     getline(cin, newStudent->program);
     cout << "Year Level: ";
-    cin >> newStudent->yearLevel;
-    cin.ignore();
+    newStudent->yearLevel = getOption();
     
     studentDataBase.addStudent(newStudent);
     studentDataBase.isModified = true;
@@ -536,26 +514,56 @@ void addRecord(StudentDataBase& studentDataBase){
 }
 
 void deleteRecord(StudentDataBase& studentDataBase){
+    int id, option;
 
     if(studentDataBase.head == NULL){
         cout << "Database is empty.\n";
+        pressContinue();
+        return;
     }
-    else{
-        int nodeId;
-        cout << "Enter database ID to delete: ";
-        cin >> nodeId;
-        cin.ignore();
+    do{
+        cout << "[1] - By Database ID\n"
+             << "[2] - By Student ID\n"
+             << "[3] - Back\n"
+             << "Option: ";
+        option = getOption();
 
-        studentDataBase.deleteRecord(nodeId);
-        studentDataBase.isModified = true;
-        studentDataBase.unsavedChanges = true;
-    }
+        system("cls");
+        switch(option){
+            case 1:
+                cout << "Enter database ID to delete: ";
+                id = getOption();
+                studentDataBase.deleteRecordDatabaseId(id);
+                break;
+            case 2:
+                cout << "Enter Student ID to delete: ";
+                id = getOption();
+                studentDataBase.deleteRecordStudentId(id);
+                break;
+            case 3:
+                return;
+            default:
+                cout << "Invalid input.\n";
+        }
+        
+        if(option == 1 || option == 2){
+            studentDataBase.isModified = true;
+            studentDataBase.unsavedChanges = true;
+            pressContinue();
+        }
+    } while(true);
 }
 
 void searchRecord(StudentDataBase& studentDataBase){
     int option, option2;
     string data;
     int intData;
+    
+    if(studentDataBase.head == nullptr){
+        cout << "Database is empty.\n";
+        pressContinue();
+        return;
+    }
 
     do{
         cout << "Choose an option for searching\n"
@@ -568,16 +576,15 @@ void searchRecord(StudentDataBase& studentDataBase){
                   << "Option: ";
         option = getOption();
 
+        system("cls");
         switch (option){
             case 1:
-                system("cls");
                 cout << "Enter student ID: ";
                 cin >> intData;
                 cin.ignore();
                 data = to_string(intData);
                 break;
             case 2:
-                system("cls");
                 cout << "[1] - By First Name\n"
                      << "[2] - By Last Name\n"
                      << "[3] - By Full Name\n"
@@ -601,44 +608,41 @@ void searchRecord(StudentDataBase& studentDataBase){
                         getline(cin, data);
                         break;
                     case 4:
-                        option = 0;
-                        break;
+                        return;
                     default:
                         option = 0;
                         cout << "Invalid input.\n";
                 }
                 break;
             case 3:
-                system("cls");
                 cout << "Enter gender: ";
                 getline(cin, data);
                 break;
             case 4:
-                system("cls");
                 cout << "Enter degree program: ";
                 getline(cin, data);
                 break;
             case 5:
-                system("cls");
                 cout << "Enter year level: ";
                 cin >> intData;
                 cin.ignore();
                 data = to_string(intData);
                 break;
             case 6:
-                system("cls");
                 return;
             default:
-                system("cls");
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                option = 0;
                 cout << "Invalid input.\n";
                 break;
         }
-        studentDataBase.searchDatabase(data, option);
+        
         if(option == 0){
             continue;
-        } else{ pressContinue(); }
+        } 
+        else{
+            studentDataBase.searchDatabase(data, option);
+            pressContinue(); 
+        }
     } while(true);
 }
 
@@ -663,4 +667,46 @@ void saveChanges(StudentDataBase& studentDataBase, fstream& DatabaseFile){
             cout << "Please enter again (Y/n): ";
         }
     } while(true);
+}
+
+bool confirmExit(StudentDataBase studentDataBase){
+    if(studentDataBase.unsavedChanges){
+        char confirm;
+        cout << "You have unsaved changes. Closing the program will lose these changes.\n";
+        cout << "Proceed to exit?(Y/n): ";
+        cin >> confirm;
+        cin.ignore();
+        switch(confirm){
+            case 'Y':
+            case 'y':
+                system("cls");
+                cout << "Program exiting...\n\n";
+                cout << "GROUP A\n"
+                        << "Agustin, Keanu\n"
+                        << "Imperial, Jacqueline\n"
+                        << "Joaquin, Arkinne Yuel\n"
+                        << "Llarvers, John Kaiser\n"
+                        << "Saavedra, Clarence Vance\n"
+                        << "Santos, Jericho\n";
+                return true;
+            case 'N':
+            case 'n':
+                return false;
+            default:
+                cout << "Invalid option.\n";
+                pressContinue();
+                return false;
+        }
+    }
+    else{
+        cout << "Program exiting...\n\n";
+        cout << "GROUP A\n"
+                << "Agustin, Keanu\n"
+                << "Imperial, Jacqueline\n"
+                << "Joaquin, Arkinne Yuel\n"
+                << "Llarvers, John Kaiser\n"
+                << "Saavedra, Clarence Vance\n"
+                << "Santos, Jericho\n";
+        return true;
+    }
 }
