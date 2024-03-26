@@ -544,7 +544,6 @@ int main(){
     return 0;
 }
 
-
 void addRecord(StudentDataBase& studentDataBase){   // interface for adding
     StudentInformation* newStudent = new StudentInformation;
 
@@ -567,8 +566,16 @@ void addRecord(StudentDataBase& studentDataBase){   // interface for adding
     getline(cin, newStudent->birthday);
     cout << "Address: ";
     getline(cin, newStudent->address);
-    cout << "Gender(M or F): ";
-    getline(cin, newStudent->gender);
+    do{
+        cout << "Gender(M or F): ";
+        getline(cin, newStudent->gender);
+        if(newStudent->gender == "M" || newStudent->gender == "m" || newStudent->gender == "F" || newStudent->gender == "F"){
+            break;
+        }
+        else{
+            cout << "Invalid input.\n";
+        }
+    } while(true);
     cout << "Degree Program: ";
     getline(cin, newStudent->program);
     cout << "Year Level: ";
