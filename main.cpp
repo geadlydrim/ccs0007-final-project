@@ -47,6 +47,21 @@ int getOption(){    // ensure valid input for int types, error handling
 	}while(true);
 }
 
+bool confirm(){
+    string confirm;
+    getline(cin, confirm);
+    if(confirm == "Y" || confirm == "y"){
+        return true;
+    }
+    else if(confirm == "N" || confirm == "n"){
+        return false;
+    }
+    else{
+        cout << "Invalid input.\n";
+        return false;
+    }
+}
+
 struct StudentInformation{  // node structure for student records
     int nodeId; 
     int studentId, yearLevel;
@@ -363,17 +378,19 @@ class StudentDataBase{  // database class that will contain the nodes
 
     void deleteRecordDatabaseId(int nodeId){
         int deleteId = nodeId;
+        StudentInformation* temp = head;
 
         if(head->nodeId == deleteId) {
-			StudentInformation* temp = head;
-			head = head->next;
-			delete temp;
-			
-			cout << "Record deleted successfully.\n";
+            displayHeader();
+            temp->displayInfo();
+            cout << "\nConfirm deletion of this record? (Y/n): ";
+            if(confirm()){
+                head = head->next;
+			    delete temp;
+			    cout << "Record deleted successfully.\n";
+            }
 		}
         else{
-		    StudentInformation* temp = head;
-
             while (temp->next != nullptr && temp->next->nodeId != deleteId) {
                 temp = temp->next;
             }
@@ -383,26 +400,34 @@ class StudentDataBase{  // database class that will contain the nodes
                 return;
             }
             
-            StudentInformation* deleteMatch = temp->next;
-            temp->next = temp->next->next;
-            delete deleteMatch;
-            cout << "Record deleted successfully.\n";
+            displayHeader();
+            temp->displayInfo();
+            cout << "\nConfirm deletion of this record? (Y/n): ";
+            if(confirm()){
+                StudentInformation* deleteMatch = temp->next;
+                temp->next = temp->next->next;
+                delete deleteMatch;
+                cout << "Record deleted successfully.\n";
+            }
         }
     }
 
     void deleteRecordStudentId(int studentId){
         int deleteId = studentId;
+        StudentInformation* temp = head;
 
         if(head->studentId == deleteId) {
-			StudentInformation* temp = head;
-			head = head->next;
-			delete temp;
-			
-			cout << "Record deleted successfully.\n";
+            displayHeader();
+            temp->displayInfo();
+            cout << "\nConfirm deletion of this record? (Y/n): ";
+            if(confirm()){
+                head = head->next;
+                delete temp;
+                
+                cout << "Record deleted successfully.\n";
+            }
 		}
         else{
-		    StudentInformation* temp = head;
-
             while (temp->next != nullptr && temp->next->studentId != deleteId) {
                 temp = temp->next;
             }
@@ -412,10 +437,15 @@ class StudentDataBase{  // database class that will contain the nodes
                 return;
             }
             
-            StudentInformation* deleteMatch = temp->next;
-            temp->next = temp->next->next;
-            delete deleteMatch;
-            cout << "Record deleted successfully.\n";
+            displayHeader();
+            temp->displayInfo();
+            cout << "\nConfirm deletion of this record? (Y/n): ";
+            if(confirm()){
+                StudentInformation* deleteMatch = temp->next;
+                temp->next = temp->next->next;
+                delete deleteMatch;
+                cout << "Record deleted successfully.\n";
+            }
         }
     }
 
@@ -707,31 +737,22 @@ void saveChanges(StudentDataBase& studentDataBase, fstream& DatabaseFile){  // c
 
 bool confirmExit(StudentDataBase studentDataBase){  // confirmation for exiting program
     if(studentDataBase.unsavedChanges){
-        char confirm;
         cout << "You have unsaved changes. Closing the program will lose these changes.\n";
         cout << "Proceed to exit?(Y/n): ";
-        cin >> confirm;
-        cin.ignore();
-        switch(confirm){
-            case 'Y':
-            case 'y':
-                system("cls");
-                cout << "Program exiting...\n\n";
-                cout << "GROUP A\n"
-                        << "Agustin, Keanu\n"
-                        << "Imperial, Jacqueline\n"
-                        << "Joaquin, Arkinne Yuel\n"
-                        << "Llarvers, John Kaiser\n"
-                        << "Saavedra, Clarence Vance\n"
-                        << "Santos, Jericho\n";
-                return true;
-            case 'N':
-            case 'n':
-                return false;
-            default:
-                cout << "Invalid option.\n";
-                pressContinue();
-                return false;
+        if(confirm()){
+            system("cls");
+            cout << "Program exiting...\n\n";
+            cout << "GROUP A\n"
+                    << "Agustin, Keanu\n"
+                    << "Imperial, Jacqueline\n"
+                    << "Joaquin, Arkinne Yuel\n"
+                    << "Llarvers, John Kaiser\n"
+                    << "Saavedra, Clarence Vance\n"
+                    << "Santos, Jericho\n";
+            return true;
+        }
+        else{
+            return false;
         }
     }
     else{
